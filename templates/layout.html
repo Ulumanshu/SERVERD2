@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- jquery -->
+    <script src="{{ url_for('static', filename='JS/jquery.min.js') }}"></script>
+    <!-- Load d3.js and c3.js -->
+    <script src="{{ url_for('static', filename='JS/d3.min.js') }}" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='JS/c3.min.js') }}"></script>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Load c3.css -->
+    <link href="{{ url_for('static', filename='c3.css') }}" rel="stylesheet">
+    <script>
+    function page_loaded() {
+    }
+    var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    console.log($SCRIPT_ROOT);
+    </script>
+    {% if title %}
+        <title>Flask_Keras - {{ title }}</title>
+    {% else %}
+        <title>Flask_Keras</title>
+    {% endif %}
+</head>
+<body>
+    <div class="container">
+        <div class="header clearfix">
+            <nav>
+            <ul class="nav nav-pills pull-left">
+            <li role="presentation" class="active"><a href="/Home"> HOME </a></li>
+            <li role="presentation" class="active"><a href="/About" > ABOUT </a></li>
+            <li role="presentation" class="active"><a href="/View" > VIEW DATASET </a></li>
+            <li role="presentation" class="active"><a href="/Train" > TRAIN </a></li>
+            </ul>
+            </nav>
+        </div>
+    </div>
+    <center>
+    <h3 class="text-muted"> -="<"Karolio Ne_Protingas Ai">"=- </h3>
+    {% block content %}
+    {% endblock content %}
+    <footer class="footer">
+    <p> Credits: </p>
+    <p> http://www.python36.com/deploy-keras-model-to-production-using-flask  </p>
+    <p> Siraj - https://www.youtube.com/channel/UCWN3xxRkmTPmbKwht9FuE5A </p>
+    </footer>
+    </center>
+</body>
+</html>

@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="jumbotron">
+    <h3 class="jumbotronHeading">***Draw the digit or letter inside this Box***</h3>
+    <div class="slidecontainer">
+        <p>***Line width***</p>
+        <input type="range" min="10" max="50" value="15" id="myRange">
+        <p>Value: <span id="sliderValue"></span></p>
+    </div>
+    <div class="canvasDiv" >
+        <canvas id="canvas" width="420" height="420" style="border:5px solid #045FB4;"></canvas>
+        <br>
+        <p style="text-align:center;">
+        <br />
+        <a class="btn btn-success myButton" href="#" role="button">PREDICT</a>
+        <a class="btn btn-primary" href="#" id="clearButton" role="button">CLEAR</a>
+        </p>
+    </div>
+</div>
+<div class="jumbotron">
+    <p id="result">!!!Get your prediction here!!!</p>
+        <a class="btn btn-success Correct_Button" href="#" role="button">CORRECT</a>
+        <a class="btn btn-primary Wrong_Button" href="#" id="Wrong" role="button">WRONG</a><br />
+        <br />
+        <input type="text" pattern="[a-zA_Z1-9]" name="input_wrong" id="input_wrong" class="form-control" size="5" maxlength="1" /><br /><br />
+        <a class="btn btn-success Submit_Button" href="#" role="button">SUBMIT</a>
+
+    </p>
+
+</div>
+<!-- /container -->
+<script src="{{ url_for('static',filename='JS/index.js') }}"></script>
+<script type="text/javascript">
+
+    ///////////////////////////////////////////////////////////////////
+    /// ***GLOBALS*** ///
+    ///////////////////////////////////////////////////////////////////
+    var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    var canvasObj = document.getElementById("canvas");
+    var class_data;
+    ///////////////////////////////////////////////////////////////////
+    /// ***Functions($)*** ///
+    ///////////////////////////////////////////////////////////////////
+    function save_pic(event){
+        event.preventDefault();
+        var correct_class = document.getElementById("input_wrong").value;
+        if (correct_class === ""){
+            $('#result').text("enter correct class (1 symbol)");
+            return 0
+        };
+        var img = canvasObj.toDataURL();
+        $.ajax({
+            type: "POST",
+            url: $SCRIPT_ROOT + "/save",
+            data:{
+                image: img,
+                correct_class: correct_class,
+            },
+            success: print_result_nobutt,
+        });
+        $("#input_wrong").hide("slow");
+        $(".Submit_Button").hide("slow");
+    };
+    ///////////////////////////////////////////////////////////////////
+    function predict_pic(event){
+        event.preventDefault()
+        var img = canvasObj.toDataURL();
+        $.ajax({
+            type: "POST",
+            url: $SCRIPT_ROOT + "/predict",
+            data: img,
+            success: print_result,
+        });
+    };
+    ///////////////////////////////////////////////////////////////////
+    function correct_prediction(event){
+        event.preventDefault();
+        $(".Wrong_Button").hide("slow");
+        $('#result').text('Image saved');
+        $(".Correct_Button").hide("slow");
+        var correct_class = class_data;
+        var img = canvasObj.toDataURL();
+        $.ajax({
+            type: "POST",
+            url: $SCRIPT_ROOT + "/save",
+            data:{
+                image: img,
+                correct_class: correct_class,
+            },
+            success: print_result_nobutt,
+        });
+    };
+    ///////////////////////////////////////////////////////////////////
+    function wrong_prediction(event){
+        event.preventDefault();
+        $(".Correct_Button").hide("slow");
+        $('#result').text('What was it you were drawing?(valid: a-z, A-Z,1-9)');
+        $(".Submit_Button").show("slow");
+        $("#input_wrong").show("slow");
+        $(".Wrong_Button").hide("slow");
+    };
+    ///////////////////////////////////////////////////////////////////
+    function print_result_nobutt(data){
+        var val1 = "";
+        data.forEach(function(element){
+            val1 += element;
+            val1 += " ";
+        });
+        $('#result').html('File saved: ' + val1);
+    }; ///Used with Flask_Keras_Multi.py///
+    ///////////////////////////////////////////////////////////////////
+    function print_result(data){
+        class_data = data; 
+        $('#result').text(' Predicted Output: ' + data);
+        $(".Correct_Button").show("slow");
+        $(".Wrong_Button").show("slow");
+    };
+    //////////////////////////////////////////////////////////////////
+    /// ***BUTTONS*** ///
+    //////////////////////////////////////////////////////////////////
+    $(".myButton").click(predict_pic);
+    $(".Correct_Button").click(correct_prediction);
+    $(".Wrong_Button").click(wrong_prediction);
+    $(".Submit_Button").click(save_pic);
+    ///////////////////////////////////////////////////////////////////
+</script>
+{% endblock content %}

@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="jumbotron">
+    <div class="row">
+        <h2> *Dataset* </h2>
+    </div>
+    <br/>
+    <div class="row">
+        <div class="row" align="left">
+            <a class="btn btn-success Delete_file" style="margin-left:50px; margin-bottom:100px";
+             onclick="checked_values(event)" id="delete_checked"
+             href="#" role="button">DELETE SELECTED</a>
+        </div>
+        {% for key, list in value.items() %}
+        <div class="col-md-4">
+            <strong><h3>{{ key }}:</h3></strong>
+            <select id={{ key }} onchange="choice(this, event)">
+                <option value="none">none</option>
+                {% for e in list %}
+                <option value={{ e }}>{{ e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endfor%}
+    </div>
+    <br/>
+    <br/>
+    <div class="row" id="dataset_view">
+    </div>
+<script type="text/javascript">
+///////////////////////////////////////////////////////////////////
+/// ***GLOBALS*** ///
+///////////////////////////////////////////////////////////////////
+var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+///////////////////////////////////////////////////////////////////
+/// ***Functions($)*** ///
+///////////////////////////////////////////////////////////////////
+function choice(id, event){
+    event.preventDefault()
+    var tag = {
+            "key": "dataset_view", 
+            "selection": id.options[id.selectedIndex].text, 
+            "id": id.id
+            };
+    $.ajax({
+        type: "GET",
+        url: $SCRIPT_ROOT + "/postman",
+        data: tag,
+        success: refresh_div,
+    });
+};
+///////////////////////////////////////////////////////////////////
+function checked_values(event){
+    event.preventDefault()
+    var path_list = []
+    var checkboxes = document.querySelectorAll('input[type=checkbox]:checked')
+
+    for (var i = 0; i < checkboxes.length; i++) {
+      path_list.push(checkboxes[i].dataset.path)
+    };
+    delete_file(path_list);
+};
+///////////////////////////////////////////////////////////////////
+function delete_file(path_list){ 
+    var tagd = {};
+    tagd["key"] = "delete_file";
+    tagd["del_list"] = path_list;
+    $.ajax({
+        type: "GET",
+        url: $SCRIPT_ROOT + "/postman",
+        data: tagd,
+        success: refresh_div,
+    });
+};
+///////////////////////////////////////////////////////////////////
+function refresh_div(data){
+    $('#dataset_view').replaceWith(data.data);
+};
+//////////////////////////////////////////////////////////////////
+/// ***BUTTONS*** ///
+//////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////
+</script>
+</div>
+{% endblock content %}

@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="jumbotron">
+    <div class="row">
+        <h2> *No Pain No Gain Only Way is Train* </h2>
+    </div>
+    <br/>
+    <div class="row">
+        <div class="row" align="left">
+            <a class="btn btn-success Start_training" style="margin-left:50px; margin-bottom:20px";
+             onclick="train_ai(this, event)" id="start_train"
+             href="#" role="button">START TRAINING</a>
+        </div>
+         <div align="left" style="margin-left:50px;">
+            <div>
+                <label for="classifajar">train Classifajar</label>
+                <input type="checkbox" id="classifajar" name="classifajar" data-ai="classifajar">
+            </div>
+            <div>
+                <label for="numbers">train numbers</label>
+                <input type="checkbox" id="numbers" name="numbers" data-ai="numbers">
+            </div>
+            <div>
+                <label for="uppercase">train uppercase</label>
+                <input type="checkbox" id="uppercase" name="uppercase" data-ai="uppercase">
+            </div>
+            <div>
+                <label for="lowercase">train lowercase</label>
+                <input type="checkbox" id="lowercase" name="lowercase" data-ai="lowercase">
+            </div>
+        </div>
+        <div id="train_chart">
+        </div>
+        <div>
+            <p id="status"/>
+        </div>
+    </div>
+<script type="text/javascript">
+///////////////////////////////////////////////////////////////////
+/// ***GLOBALS*** ///
+///////////////////////////////////////////////////////////////////
+var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+var start_url = $SCRIPT_ROOT + "/startT"
+///////////////////////////////////////////////////////////////////
+/// ***Functions($)*** ///
+///////////////////////////////////////////////////////////////////
+function train_ai(id, event){
+    event.preventDefault();
+    const checked = () => {
+        var res = '';
+        var checkboxes = document.querySelectorAll('input[type=checkbox]:checked');
+        for (var i = 0; i < checkboxes.length; i++) {
+            res += checkboxes[i].dataset.ai + ' ';
+        };
+        return res.trim();
+    };
+    fetch(start_url + "/" + id.id + "/" + checked()).then(function(response) {
+        return response.json();
+    }).then(function(respj) {
+        document.getElementById("status").innerHTML = respj.data.value;
+    }).catch(function() {
+        console.log("Error!");
+    });
+};
+///////////////////////////////////////////////////////////////////
+$(document).ready(function(){
+    var monitored = {};
+    var source = new EventSource('/drawchart');
+    var chart = null;
+    var ignored = ['epoch', 'model', 'state']
+    source.addEventListener('message', function(e) {
+        console.log(e)
+        var data = JSON.parse(e.data.replace(/'/g, '"'));
+        if (chart === null) {
+            for (key in data) {
+                if (!(ignored.includes(key))){
+                    monitored[key] = [key, data[key]];
+                }
+            }
+            var columns = [];
+            for (key in monitored) {
+                columns.push(monitored[key]);
+            }
+            chart = c3.generate({
+                bindto:'#train_chart',
+                data: {
+                    columns: columns
+                }
+            });
+        }
+        else {
+            if (data.model) {
+                document.getElementById("status").innerHTML = "TRAINING " + data.model.toUpperCase();
+            }
+            for (key in data) {
+                if (key in monitored) {
+                    monitored[key].push(data[key]);
+                }
+                var columns = [];
+                for (key in monitored) {
+                    columns.push(monitored[key]);
+                }
+                chart.load({
+                    columns: columns
+                });
+            }
+        }
+    }, false);
+});
+//////////////////////////////////////////////////////////////////
+/// ***BUTTONS*** ///
+//////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////
+</script>
+</div>
+{% endblock content %}

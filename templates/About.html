@@ -1,0 +1,150 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="jumbotron">
+        <div class="row">
+            <h1> *Keyboard_Draw* </h1>
+        </div>
+<!--    Description-->
+        <div class="row">
+            <div class="col-md-2">
+            <tr>
+            <td>
+                <div align="center" style="margin:20px;">
+                    <img src="{{ url_for('static', filename='Images/profile.jpg') }}"
+                        width="210" height="210" style="border:5px solid #045FB4;">
+                </div>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <div align="center" style="margin:20px;">
+                    <a class="btn btn-success Dataset_nfo" href="#" role="button">REFRESH DATASET NFO</a>
+                </div>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <div align="center" style="margin:20px;">
+                    <a class="btn btn-success Train_fill" href="#" role="button">FILL TRAIN DIR</a>
+                </div>
+            </td>
+            </tr>
+            <tr>
+            <td>
+                <div align="center" style="margin:20px;">
+                    <a class="btn btn-success Train_purge" href="#" role="button">PURGE TRAIN DIR</a>
+                </div>
+            </td>
+            </tr>
+            </div>
+            <div class="col-md-10">
+                <p style="text-align:left; text-indent: 4em; padding-top:50px;">
+                    I am very nice person, doing very nice things, and this is my very nice project. This THING after being filled with your hand drawn keyboard letters and numbers should start recognizing them:)
+                </p>
+            </div>
+<!--    Buttons-->
+        <div class="row"></div>
+        </div>
+<script type="text/javascript">
+///////////////////////////////////////////////////////////////////
+/// ***GLOBALS*** ///
+///////////////////////////////////////////////////////////////////
+var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+///////////////////////////////////////////////////////////////////
+/// ***Functions($)*** ///
+///////////////////////////////////////////////////////////////////
+function refresh_dataset(event){
+    event.preventDefault()
+    var tag = {"key": "refresh_data"}
+    $.ajax({
+        type: "GET",
+        url: $SCRIPT_ROOT + "/postman",
+        data: tag,
+        success: refresh_div,
+    });
+};
+///////////////////////////////////////////////////////////////////
+function train_fill(event){
+    event.preventDefault()
+    var tag2 = {"key": "train_fill"}
+    $.ajax({
+        type: "GET",
+        url: $SCRIPT_ROOT + "/postman",
+        data: tag2,
+        success: refresh_div,
+    });
+};
+///////////////////////////////////////////////////////////////////
+function train_purge(event){
+    event.preventDefault()
+    var tag3 = {"key": "train_purge"}
+    $.ajax({
+        type: "GET",
+        url: $SCRIPT_ROOT + "/postman",
+        data: tag3,
+        success: refresh_div,
+    });
+};
+///////////////////////////////////////////////////////////////////
+function refresh_div(data){
+    console.log("reloaded?", data);
+    $('#dataset_nfo').replaceWith(data.data);
+  //  window.location.reload(true);
+    console.log("reloaded?");
+};
+//////////////////////////////////////////////////////////////////
+/// ***BUTTONS*** ///
+//////////////////////////////////////////////////////////////////
+$(".Dataset_nfo").click(refresh_dataset);
+$(".Train_fill").click(train_fill);
+$(".Train_purge").click(train_purge);
+///////////////////////////////////////////////////////////////////
+</script>
+<!--    Dataset overview-->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row" id="dataset_nfo">
+                {% for key, dict in value.items() %}
+                <div class="col-md-6">
+                  <tr>
+                    <td>
+                        <h3> {{ key }} </h3>
+                    </td>
+                  </tr>
+                   <tr>
+                    <td>
+                        {% for k, v in dict.items() %}
+                        <div class="col-md-3">
+                        <tr>
+                            <td>
+                                <p> {{ k }} </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                            {% for ky, va in v.items() %}
+                            <div class="col-md-12">
+                            <tr>
+                                <td>
+                                    <span> {{ ky }}: </span>
+                                </td>
+                                <td>
+                                    <span> {{ va }} </span>
+                                </td>
+                            </tr>
+                            </div>
+                            {% endfor %}
+                            </td>
+                        </tr>
+                        </div>
+                        {% endfor %}
+                    </td>
+                  </tr>
+                </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,17 @@
+<div class="row" id="dataset_view">
+    {% for file in files %}
+    <div class="col-md-4">
+        <div><h4><span> {{ file.split('?')[0] }} </h4></span></div>
+        <div>
+            <img src="{{dire + '/' + file}}">
+        </div>
+        <div align="center" style="margin:20px;">
+            <div>
+              <input type="checkbox" id="{{loop.counter}}" name="{{file}}" data-path="{{dire + '/' + file}}">
+              <label for="{{file}}">{{file.split('?')[0]}}</label>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>

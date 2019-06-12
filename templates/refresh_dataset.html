@@ -1,0 +1,41 @@
+<div class="row" id="dataset_nfo">
+    {% for key, dict in value.items() %}
+    <div class="col-md-6">
+      <tr>
+        <td>
+            <h3> {{ key }} </h3>
+        </td>
+      </tr>
+       <tr>
+        <td>
+            {% for k, v in dict.items() %}
+            <div class="col-md-3">
+            <tr>
+                <td>
+                    <p> {{ k }} </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                {% for ky, va in v.items() %}
+                <div class="col-md-12">
+                <tr>
+                    <td>
+                        <span> {{ ky }}: </span>
+                    </td>
+                    <td>
+                        <span> {{ va }} </span>
+                    </td>
+                </tr>
+                </div>
+                {% endfor %}
+                </td>
+            </tr>
+            </div>
+            {% endfor %}
+        </td>
+      </tr>
+    </div>
+    {% endfor %}
+    </div>
+</div>
