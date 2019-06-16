@@ -40,19 +40,33 @@ class Zemodel:
         print("Model from {} file loaded".format(path))
         return model
 
-    def __init__(self, path):
+    def __init__(self, path, labels_path, name):
         self.model = self.loadmodel(path)
         self.graph = tf.get_default_graph()
-
+        self.label_path = labels_path
+        self.name = name
+    
+    @property
+    def labels(self):
+        with open(self.label_path) as f:
+            labels_dict = json.load(f)
+        return labels_dict
+    
     def zpredict(self, x):
         with self.graph.as_default():
-            preds = self.model.predict(x)
-            results = np.argmax(preds, axis=1)
-            results = str(results)
-            results = eval(results)
-            results = results[0]
-            return results
-
+#            preds = self.model.predict(x)
+            probs = self.model.predict_proba(x/255.0)
+            prob_round = [round(float(e) * 100, 2)for e in probs[0] if len(probs) > 0]
+            probs_dict = {}
+            for k, v in self.labels.items():
+                probs_dict[k] = prob_round[v]
+#            print("PReds", preds, np.argmax(preds, axis=1))
+            print("PRobs", probs_dict)
+#            results = np.argmax(preds, axis=1)[0]
+#            prediction = list(filter(lambda x: x[1] == results, self.labels.items()))[0]
+#            print(prediction[0], probs_dict)
+#            return prediction[0], probs_dict
+            return probs_dict
 
 # initialize our Flask application and the Keras model
 app = flask.Flask(__name__)
@@ -306,7 +320,6 @@ def save():
         alt_image = request.form["image"]
         image = re.search(r'base64,(.+)', str(alt_image)).group(1)
         c_class = re.search(r'&correct_class=(.)', str(response)).group(1)
-        print(" C_Class: ", c_class)
         if len(re.search(r'&correct_class=(.+)', str(response)).group(1)) > 5:
             c_class = re.search(r"&correct_class=\w\w\w\w\w\w_(.)", str(response)).group(1)
         save_dir = []
@@ -343,57 +356,82 @@ def save():
     json_res = jsonify(results)
     return json_res
 
-@app.route("/predict", methods=["GET", "POST"])
+@app.route("/predict", methods=["POST"])
 def predict():
+    models = {
+        "classifajar": model_C,
+        "lowercase": model_l,
+        "uppercase": model_u,
+        "numbers": model_n
+    }
+    def dict_max(labels_dict):
+        res = tuple()
+        maximum = 0.0
+        for key, value in labels_dict.items():
+            if value > maximum:
+                maximum = value
+        res = list(filter(lambda x: x[1] == maximum, labels_dict.items()))[0]
+        return res
     # if somebody accidently pushes a button "predict" href="/predict"
     results = None
-    if flask.request.method == "POST":
-        image = request.get_data()
-        # preprocess the image and prepare it for classification
-        image = prepare_image(image, target=(42, 42))
-        # classify the input image and then initialize the list
-        # of predictions to return to the client
-        results = model_C.zpredict(image)
-        # loop over the label_dict_tuples and
-        # connect human meaning to prediction
-        with open("./model/models_multi/labels_Classifajar.json") as f:
-            labels_dict = json.load(f)
-        for key, value in labels_dict.items():
-            if value == results:
-                results = key
-        if results == "numbers":
-            with open("./model/models_multi/labels_{}.json".format(results)) as f:
-                labels_dict = json.load(f)
-            results = model_n.zpredict(image)
-            for key, value in labels_dict.items():
-                if value == results:
-                    results = key
-        if results == "uppercase":
-            with open("./model/models_multi/labels_{}.json".format(results)) as f:
-                labels_dict = json.load(f)
-            results = model_u.zpredict(image)
-            for key, value in labels_dict.items():
-                if value == results:
-                    results = key
-        if results == "lowercase":
-            with open("./model/models_multi/labels_{}.json".format(results)) as f:
-                labels_dict = json.load(f)
-            results = model_l.zpredict(image)
-            for key, value in labels_dict.items():
-                if value == results:
-                    results = key
-        # return display placeholder for html embed
-        return results
+    percents = []
+    req_data = request.get_json()
+    # preprocess the image and prepare it for classification
+    image = prepare_image(req_data['image'], target=(42, 42))
+    checkboxes = req_data['checkboxes'] and req_data['checkboxes'].split(' ')
+    # classify the input image and then initialize the list
+    # of predictions to return to the client
+    if 'classifajar' in checkboxes:
+        results_c = model_C.zpredict(image)
+        percents.append(filter(lambda l: l[1] > 5.0, results_c.items()))
+        res_c = dict_max(results_c)
+        res = models[res_c[0]].zpredict(image)
+        percents.append(filter(lambda l: l[1] > 5.0, res.items()))
+        results = dict_max(res)
+        return jsonify(
+            result=results[0],
+            html_prc=render_template('predict_info.html', percent=percents),
+            success=True
+        )
+    else:
+        results = {}
+        for check in checkboxes:
+            results_perc = models[check].zpredict(image)
+            percents.append(filter(lambda l: l[1] > 5.0, results_perc.items()))
+            res = dict_max(results_perc)
+            results[res[0]] = res[1]
+        results = dict_max(results)
+        return jsonify(
+            result=results[0],
+            html_prc=render_template('predict_info.html', percent=percents),
+            success=True
+        )
 
 # if this is the main thread of execution first load the model and
 # then start the server
 if __name__ == "__main__":
     print(("* Loading Keras model and Flask starting server..."
            "please wait until server has fully started"))
-    model_C = Zemodel("./model/models_multi/model_Classifajar.h5")
-    model_u = Zemodel("./model/models_multi/model_uppercase.h5")
-    model_l = Zemodel("./model/models_multi/model_lowercase.h5")
-    model_n = Zemodel("./model/models_multi/model_numbers.h5")
+    model_C = Zemodel(
+        "./model/models_multi/model_Classifajar.h5",
+        "./model/models_multi/labels_Classifajar.json",
+        "classifajar"
+    )
+    model_u = Zemodel(
+        "./model/models_multi/model_uppercase.h5",
+        "./model/models_multi/labels_uppercase.json",
+        "uppercase"
+    )
+    model_l = Zemodel(
+        "./model/models_multi/model_lowercase.h5",
+        "./model/models_multi/labels_lowercase.json",
+        "lowercase"
+    )
+    model_n = Zemodel(
+        "./model/models_multi/model_numbers.h5",
+        "./model/models_multi/labels_numbers.json",
+        "numbers"
+    )
 #    run_simple("localhost", 5000, app, use_reloader=True, use_debugger=True, use_evalex=True)
 #    app.run(host='0.0.0.0', port=5000)
     server = WSGIServer(("", 5000), app)

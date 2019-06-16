@@ -2,13 +2,43 @@
 {% block content %}
 <div class="jumbotron">
     <h3 class="jumbotronHeading">***Draw the digit or letter inside this Box***</h3>
-    <div class="slidecontainer">
-        <p>***Line width***</p>
-        <input type="range" min="10" max="50" value="15" id="myRange">
-        <p>Value: <span id="sliderValue"></span></p>
+    <div class="col-md-6">
+        <table>
+            <tr class="col-md-12">
+                <td>
+                    <div class="slidecontainer">
+                        <p>***Line width***</p>
+                        <input type="range" min="10" max="50" value="15" id="myRange">
+                        <p>Value: <span id="sliderValue"></span></p>
+                    </div>
+                </td>
+            </tr>
+            <tr class="col-md-12">
+                <td>
+                    <fieldset>
+                        <div class="form-row">
+                            <label for="classifajar">Classifajar</label>
+                            <input type="checkbox" id="p_classifajar" name="classifajar" data-ai="classifajar">
+                        </div>
+                        <div class="form-row">
+                            <label for="numbers">numbers</label>
+                            <input type="checkbox" id="p_numbers" name="numbers" data-ai="numbers">
+                        </div>
+                        <div class="form-row">
+                            <label for="uppercase">uppercase</label>
+                            <input type="checkbox" id="p_uppercase" name="uppercase" data-ai="uppercase">
+                        </div>
+                        <div class="form-row">
+                            <label for="lowercase">lowercase</label>
+                            <input type="checkbox" id="p_lowercase" name="lowercase" data-ai="lowercase">
+                        </div>
+                    </fieldset>
+                </td>
+            </tr>
+        </table>
     </div>
-    <div class="canvasDiv" >
-        <canvas id="canvas" width="420" height="420" style="border:5px solid #045FB4;"></canvas>
+    <div class="canvasDiv" class="col-md-6">
+        <canvas id="canvas" width="420" height="420" style="border:5px solid #045FB4;" aling="center"></canvas>
         <br>
         <p style="text-align:center;">
         <br />
@@ -19,15 +49,15 @@
 </div>
 <div class="jumbotron">
     <p id="result">!!!Get your prediction here!!!</p>
+    <div id="result_info"><p>!!!Details!!!</p></div>
         <a class="btn btn-success Correct_Button" href="#" role="button">CORRECT</a>
         <a class="btn btn-primary Wrong_Button" href="#" id="Wrong" role="button">WRONG</a><br />
         <br />
         <input type="text" pattern="[a-zA_Z1-9]" name="input_wrong" id="input_wrong" class="form-control" size="5" maxlength="1" /><br /><br />
         <a class="btn btn-success Submit_Button" href="#" role="button">SUBMIT</a>
-
     </p>
-
 </div>
+
 <!-- /container -->
 <script src="{{ url_for('static',filename='JS/index.js') }}"></script>
 <script type="text/javascript">
@@ -64,11 +94,24 @@
     ///////////////////////////////////////////////////////////////////
     function predict_pic(event){
         event.preventDefault()
+        const checked = () => {
+            var res = '';
+            var checkboxes = document.querySelectorAll('input[type=checkbox]:checked');
+            for (var i = 0; i < checkboxes.length; i++) {
+                res += checkboxes[i].dataset.ai + ' ';
+            };
+            return res.trim();
+        };
         var img = canvasObj.toDataURL();
+        var tag = {
+            "image": img, 
+            "checkboxes": checked() || 'classifajar',
+        };
         $.ajax({
             type: "POST",
             url: $SCRIPT_ROOT + "/predict",
-            data: img,
+            contentType: "application/json",
+            data: JSON.stringify(tag),
             success: print_result,
         });
     };
@@ -110,8 +153,10 @@
     }; ///Used with Flask_Keras_Multi.py///
     ///////////////////////////////////////////////////////////////////
     function print_result(data){
-        class_data = data; 
-        $('#result').text(' Predicted Output: ' + data);
+        console.log('print func data', data, data.result)
+        class_data = data.result; 
+        $('#result').text(' Predicted Output: ' + data.result);
+        $('#result_info').html(data.html_prc);
         $(".Correct_Button").show("slow");
         $(".Wrong_Button").show("slow");
     };
@@ -122,6 +167,28 @@
     $(".Correct_Button").click(correct_prediction);
     $(".Wrong_Button").click(wrong_prediction);
     $(".Submit_Button").click(save_pic);
+    $("#p_classifajar").change(function() {
+        if(this.checked) {
+            $("#p_uppercase").prop( "checked", false );
+            $("#p_lowercase").prop( "checked", false );
+            $("#p_numbers").prop( "checked", false );
+        }
+    });
+    $("#p_uppercase").change(function() {
+        if(this.checked) {
+            $("#p_classifajar").prop( "checked", false );
+        }
+    });
+    $("#p_lowercase").change(function() {
+        if(this.checked) {
+            $("#p_classifajar").prop( "checked", false );
+        }
+    });
+    $("#p_numbers").change(function() {
+        if(this.checked) {
+            $("#p_classifajar").prop( "checked", false );
+        }
+    });
     ///////////////////////////////////////////////////////////////////
 </script>
 {% endblock content %}

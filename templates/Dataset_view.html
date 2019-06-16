@@ -38,10 +38,10 @@ var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 function choice(id, event){
     event.preventDefault()
     var tag = {
-            "key": "dataset_view", 
-            "selection": id.options[id.selectedIndex].text, 
-            "id": id.id
-            };
+        "key": "dataset_view", 
+        "selection": id.options[id.selectedIndex].text, 
+        "id": id.id
+    };
     $.ajax({
         type: "GET",
         url: $SCRIPT_ROOT + "/postman",

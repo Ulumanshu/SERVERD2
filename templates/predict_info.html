@@ -1,0 +1,9 @@
+{% for model in percent %}
+    <div class="d-inline bg-success">
+        {% for tuple in model %}
+            <span>{{tuple[0]}}: {{tuple[1]}} %</span>
+        {% endfor %}
+    </div>
+    <hr>
+{% endfor %}
+
