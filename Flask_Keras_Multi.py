@@ -139,6 +139,41 @@ def About():
         dataset = json.load(f)
     return render_template('About.html', title="About", value=dataset)
 
+@app.route("/reload/<string:command>")
+def reload(command):
+    res = {}
+    if command == "reload":
+        if len(threading.enumerate()) > 1:
+                res.update(value="Server Busy!")
+                
+                return jsonify(
+                    success=True,
+                    data=res
+                )
+        model_C = Zemodel(
+            "./model/models_multi/model_Classifajar.h5",
+            "./model/models_multi/labels_Classifajar.json",
+            "classifajar"
+        )
+        model_u = Zemodel(
+            "./model/models_multi/model_uppercase.h5",
+            "./model/models_multi/labels_uppercase.json",
+            "uppercase"
+        )
+        model_l = Zemodel(
+            "./model/models_multi/model_lowercase.h5",
+            "./model/models_multi/labels_lowercase.json",
+            "lowercase"
+        )
+        model_n = Zemodel(
+            "./model/models_multi/model_numbers.h5",
+            "./model/models_multi/labels_numbers.json",
+            "numbers"
+        )
+        res.update(value="Models Reloaded!")
+        
+    return jsonify(sucess=True, data=res)
+    
 @app.route("/Train")
 def Train():
     return render_template('Train.html', title="Train")

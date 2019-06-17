@@ -11,6 +11,11 @@
              onclick="train_ai(this, event)" id="start_train"
              href="#" role="button">START TRAINING</a>
         </div>
+        <div class="row" align="left">
+            <a class="btn btn-success Reload" style="margin-left:50px; margin-bottom:20px";
+             onclick="reload_ai(this, event)" id="reload_ai"
+             href="#" role="button">RELOAD MODELS</a>
+        </div>
          <div align="left" style="margin-left:50px;">
             <div>
                 <label for="classifajar">train Classifajar</label>
@@ -41,6 +46,7 @@
 ///////////////////////////////////////////////////////////////////
 var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 var start_url = $SCRIPT_ROOT + "/startT"
+var reload_url = $SCRIPT_ROOT + "/reload"
 ///////////////////////////////////////////////////////////////////
 /// ***Functions($)*** ///
 ///////////////////////////////////////////////////////////////////
@@ -55,6 +61,17 @@ function train_ai(id, event){
         return res.trim();
     };
     fetch(start_url + "/" + id.id + "/" + checked()).then(function(response) {
+        return response.json();
+    }).then(function(respj) {
+        document.getElementById("status").innerHTML = respj.data.value;
+    }).catch(function() {
+        console.log("Error!");
+    });
+};
+///////////////////////////////////////////////////////////////////
+function reload_ai(id, event){
+    event.preventDefault();
+    fetch(reload_url + "/" + "reload").then(function(response) {
         return response.json();
     }).then(function(respj) {
         document.getElementById("status").innerHTML = respj.data.value;

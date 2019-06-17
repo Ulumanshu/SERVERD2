@@ -52,6 +52,7 @@ function debug(){
         context.clearRect( 0, 0, 420, 420 );
         context.fillStyle="black";
         context.fillRect(0,0,canvas.width,canvas.height);
+        $('#result_info').html("<p>!!!Details!!!</p>");
     });
     /* LINE WIDTH */
     var slider = document.getElementById("myRange");
