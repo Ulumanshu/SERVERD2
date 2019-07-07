@@ -11,7 +11,7 @@ import tensorflow as tf
 from werkzeug.serving import run_simple
 import base64
 import re
-from scipy.misc import imread, imresize
+from scipy.misc import imread, imresize, toimage
 import json
 import os
 import threading
@@ -24,6 +24,7 @@ from gevent.queue import Queue
 from gevent.pywsgi import WSGIServer
 import datetime
 import sys
+import imageio
 
 def prynt(print_me):
     sys.stdout.write(print_me)
@@ -120,7 +121,9 @@ def prepare_image(image, target):
     image = re.search(r'base64,(.*)', str(image)).group(1)
     with open('output.png', 'wb') as output:
         output.write(base64.b64decode(image))
-    image = imread('output.png', mode='L')
+    image = imageio.imread(base64.b64decode(image), pilmode="L")
+    image = count.resize_file(image)
+#    toimage(image).show()
     image = imresize(image, target)
     image = image.reshape(1, 42, 42, 1)
     # return the processed image
@@ -383,8 +386,10 @@ def save():
         cnt = len(next(os.walk(save_dir))[2]) + 1
         fn_root = dir_end[1:] + "_" + str(cnt)
         fname = '%s.png' % fn_root
-        with open(os.path.join(save_dir, fname), 'wb') as output:
-            output.write(base64.b64decode(image))
+        # TODO resize on save
+        image = imageio.imread(base64.b64decode(image), pilmode="L")
+        image = count.resize_file(image)
+        toimage(image).save(os.path.join(save_dir, fname))
         results.append(save_dir)
         results.append(fname)
     # return jsonified list for js parse, html display

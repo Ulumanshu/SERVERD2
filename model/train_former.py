@@ -4,6 +4,13 @@ import json
 import string
 import itertools
 import random
+from scipy.misc import imread, imresize, toimage
+import numpy as np
+import base64
+import io
+from PIL import Image
+import imageio
+
 
 class Train_Former:
     """ Simple Class witch purpose is to manage filecount
@@ -231,7 +238,108 @@ class Train_Former:
         for fail2 in sorted(file_list2):
             new_name2 = fail2[2:]
             os.rename(directory + '/' + fail2, directory + '/' + new_name2)
-
+    
+    def Resize_Train(self):
+        """Resizes all files in train directory"""
+        for dir_t in self.train_list:
+            dir_cnt, dir_ls = Train_Former.count_dir(dir_t)
+            for dir_spec in dir_ls:
+                dir_path = os.path.join(dir_t, dir_spec)
+                Train_Former.resize_dir_files(dir_path)
+                
+    def Resize_Save(self):
+        """Resizes all files in save directory"""
+        for dir_s in self.save_list:
+            dir_cnt, dir_ls = Train_Former.count_dir(dir_s)
+            for dir_spec in dir_ls:
+                dir_path = os.path.join(dir_s, dir_spec)
+                Train_Former.resize_dir_files(dir_path)
+    
+    @staticmethod
+    def resize_dir_files(directory):
+        """Finds files with .png at the end and resizes them and crop adjusts"""
+        file_cnt, file_list = Train_Former.count_file(directory)
+        for fail in sorted(file_list):
+            if re.search(r"([^\.]+$)", str(fail)).group(1) == 'png':
+                image = imageio.imread(os.path.join(directory, fail), pilmode='L')
+                image = Train_Former.resize_file(image)
+                toimage(image).save(os.path.join(directory, fail))
+                print("File %s was resized: %s" % (os.path.join(directory, fail), '42 x 42'))
+        
+    @staticmethod
+    def resize_file(file_data):
+        image = file_data
+        target=(42, 42)
+        cut_dict = {
+        'top_y': 0, 'bot_y': 0,
+        'left_x': 0, 'right_x': 0,
+        'height': len(image),
+        'width': len(image[0]),
+        'cut_height': 0,
+        'cut_width': 0,
+        'indexes': []
+        }
+        # evidently image is [top --> bot, left --> right]
+        for y, row in enumerate(image):
+            if sum(row) > 0:
+                cut_dict['top_y'] = y
+                cut_dict['indexes'].append(y)
+                break
+        for y, row in enumerate(reversed(image)):
+            if sum(row) > 0:
+                cut_dict['bot_y'] = -y - 1
+                cut_dict['indexes'].append(y)
+                break
+        for x in range(cut_dict['width']):
+            if sum(map(lambda row: row[x], image)) > 0:
+                cut_dict['left_x'] = x
+                cut_dict['indexes'].append(x)
+                break
+        for nr, x in enumerate(reversed(range(cut_dict['width']))):
+            if sum(map(lambda row: row[x], image)) > 0:
+                cut_dict['right_x'] = -nr -1
+                cut_dict['indexes'].append(nr)
+                break
+        min_index = min(cut_dict['indexes'])
+        max_index = max(cut_dict['indexes'])
+        if min_index > 20 and max_index < cut_dict['height'] -20 and \
+            cut_dict['height'] > target[0] and cut_dict['width'] > target[1]:
+            np_image = np.array(image)
+            np_image = np_image[
+                cut_dict['top_y']:cut_dict['bot_y'],
+                cut_dict['left_x']:cut_dict['right_x']
+            ]
+            cut_dict['cut_width'] = len(np_image[0])
+            cut_dict['cut_height'] = len(np_image)
+            if cut_dict['cut_height'] != cut_dict['cut_width']:
+                if cut_dict['cut_height'] > cut_dict['cut_width']:
+                    diff = cut_dict['cut_height'] - cut_dict['cut_width']
+                    cof = 0
+                    if diff % 2 != 0:
+                        diff += 1
+                        cof = 1
+                    np_image = np.pad(
+                        np_image,
+                        ((10 + cof, 10), (int(diff // 2) + 10, int(diff // 2) + 10)),
+                        'constant', constant_values=(0, 0)
+                    )
+                    image = np_image
+                elif cut_dict['cut_width'] > cut_dict['cut_height']:
+                    diff = cut_dict['cut_width'] - cut_dict['cut_height']
+                    cof = 0
+                    if diff % 2 != 0:
+                        diff += 1
+                        cof = 1
+                    np_image = np.pad(
+                        np_image,
+                        ((int(diff // 2) + 10, int(diff // 2) + 10), (10 + cof, 10)),
+                        'constant', constant_values=(0, 0)
+                    )
+                    image = np_image
+        
+        image = imresize(image, target)
+        return image
+    
     @staticmethod
     def read_file(dir_c, fname):
         """Reads given file from given destination
@@ -280,9 +388,10 @@ class Train_Former:
 
 if __name__ == "__main__":
     ozka = Train_Former()
-    ozka.Purge_Train()
-    
+#    ozka.Purge_Train()
 #    ozka.Classifajar_former()
 #    ozka.accountant()
-    ozka.File_Copy()
+#    ozka.File_Copy()
 #    ozka.Class_former()
+    ozka.Resize_Save()
+    ozka.Resize_Train()
