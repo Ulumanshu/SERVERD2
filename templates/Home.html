@@ -43,6 +43,7 @@
         <p style="text-align:center;">
         <br />
         <a class="btn btn-success myButton" href="#" role="button">PREDICT</a>
+        <a class="btn btn-success Activations" href="#" role="button" id="activations" >VIEW ACTIVATIONS</a>
         <a class="btn btn-primary" href="#" id="clearButton" role="button">CLEAR</a>
         </p>
     </div>
@@ -115,6 +116,33 @@
             success: print_result,
         });
     };
+     ///////////////////////////////////////////////////////////////////
+    function view_activations(event){
+        event.preventDefault()
+        $(".Wrong_Button").hide("slow");
+        $(".Correct_Button").hide("slow");
+        const checked = () => {
+            var res = '';
+            var checkboxes = document.querySelectorAll('input[type=checkbox]:checked');
+            for (var i = 0; i < checkboxes.length; i++) {
+                res += checkboxes[i].dataset.ai + ' ';
+            };
+            return res.trim();
+        };
+        var img = canvasObj.toDataURL();
+        var model = checked() || "classifajar";
+        var data = {
+            image: img,
+            mod: model,
+        };
+        $.ajax({
+            type: "POST",
+            url: $SCRIPT_ROOT + "/show_layers",
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: print_result_activation,
+        });
+    };
     ///////////////////////////////////////////////////////////////////
     function correct_prediction(event){
         event.preventDefault();
@@ -143,6 +171,13 @@
         $(".Wrong_Button").hide("slow");
     };
     ///////////////////////////////////////////////////////////////////
+    function print_result_activation(data){
+        var model = data.for_model
+        var rendered = data.html_prc;
+        $('#result').html('*Activations of ' + model + '*');
+        $('#result_info').html(rendered);
+    };
+    ///////////////////////////////////////////////////////////////////
     function print_result_nobutt(data){
         var val1 = "";
         data.forEach(function(element){
@@ -166,6 +201,7 @@
     $(".Correct_Button").click(correct_prediction);
     $(".Wrong_Button").click(wrong_prediction);
     $(".Submit_Button").click(save_pic);
+    $("#activations").click(view_activations);
     $("#p_classifajar").change(function() {
         if(this.checked) {
             $("#p_uppercase").prop( "checked", false );

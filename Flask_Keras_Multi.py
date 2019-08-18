@@ -2,7 +2,10 @@
 # Start the server:
 # python3 Flask_Keras_Multi.py
 # Open web link and save letters to pc:D
+import matplotlib
+from matplotlib import pyplot as plt
 from keras.models import load_model
+from keras import models as k_models
 import numpy as np
 import flask
 from flask import Flask, render_template, url_for, request, flash, redirect, jsonify, Response
@@ -25,6 +28,9 @@ from gevent.pywsgi import WSGIServer
 import datetime
 import sys
 import imageio
+from PIL import Image
+import io
+
 
 def prynt(print_me):
     sys.stdout.write(print_me)
@@ -53,6 +59,17 @@ class Zemodel:
             labels_dict = json.load(f)
         return labels_dict
     
+    def view_activation_layers(self, img_tensor):
+        with self.graph.as_default():
+            # Extracts the outputs of the top 12 layers
+            layer_outputs = [layer.output for layer in self.model.layers[:12]]
+            # Creates a model that will return these outputs, given the model input
+            activation_model = k_models.Model(inputs=self.model.input, outputs=layer_outputs)
+            layer_names = [l.name for l in activation_model.layers]
+            # Returns a list of five Numpy arrays: one array per layer activation
+            activations = activation_model.predict(img_tensor)
+            return layer_names, activations
+        
     def zpredict(self, x):
         with self.graph.as_default():
 #            preds = self.model.predict(x)
@@ -134,6 +151,52 @@ def prepare_image(image, target):
 def home():
     # render homepage html from template
     return render_template('Home.html')
+
+@app.route("/show_layers", methods=["POST"])
+def show_layers():
+    models = {
+        "classifajar": model_C,
+        "lowercase": model_l,
+        "uppercase": model_u,
+        "numbers": model_n
+    }
+    response = {}
+    req_data = request.get_json()
+    image = prepare_image(req_data['image'], target=(42, 42))
+    checkboxes = req_data['mod']
+    model = checkboxes and checkboxes.split(' ') and checkboxes.split(' ')[0] or "classifajar"
+    layer_names, activations = models[model].view_activation_layers(image)
+    images_per_row = 200
+    for name, layer in zip(layer_names, activations):
+        if 'dropout' in name or 'flatten' in name or 'dense' in name:
+            continue
+        n_features = layer.shape[-1]
+        response[(name, n_features)] = []
+        i = 0
+        for img_indx in range(n_features):
+            if i >= images_per_row:
+                break
+            channel_image = layer[0, :, :, img_indx]
+            # Post-processes the feature to make it visually palatable
+            channel_image -= channel_image.mean()
+            channel_image *= 64
+            channel_image += 128
+            channel_image = np.clip(channel_image, 0, 255).astype('uint8')
+#           channel_image /= channel_image.std()
+            b = io.BytesIO()
+            new_img = imresize(channel_image, (200, 200))
+            new_img = Image.fromarray(new_img)
+            new_img.convert("L").save(b, 'png')
+            im_bytes = b.getvalue()
+            channel_image = base64.b64encode(im_bytes).decode('utf-8')
+            response[(name, n_features)].append(channel_image)
+            i += 1
+   
+    return jsonify(
+        for_model=model,
+        html_prc=render_template('activations.html', layers=response),
+        success=True
+    )
 
 @app.route("/About")
 def About():
@@ -328,12 +391,6 @@ def postman():
                 return jsonify(success=True, data=render_template('gallery.html', files=[]))
             
     return "just_in_case"
-
-#@app.route("/upload/<directory><filename>")
-#def send_image(directory, filename):
-#    print(directory, filename)
-#    return send_from_directory(directory, filename)
-
 
 @app.route("/View", methods=["GET","POST"])
 def dataset_view():

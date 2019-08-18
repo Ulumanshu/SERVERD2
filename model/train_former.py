@@ -300,42 +300,44 @@ class Train_Former:
                 cut_dict['right_x'] = -nr -1
                 cut_dict['indexes'].append(nr)
                 break
-        min_index = min(cut_dict['indexes'])
-        max_index = max(cut_dict['indexes'])
-        if min_index > 20 and max_index < cut_dict['height'] -20 and \
-            cut_dict['height'] > target[0] and cut_dict['width'] > target[1]:
-            np_image = np.array(image)
-            np_image = np_image[
-                cut_dict['top_y']:cut_dict['bot_y'],
-                cut_dict['left_x']:cut_dict['right_x']
-            ]
-            cut_dict['cut_width'] = len(np_image[0])
-            cut_dict['cut_height'] = len(np_image)
-            if cut_dict['cut_height'] != cut_dict['cut_width']:
-                if cut_dict['cut_height'] > cut_dict['cut_width']:
-                    diff = cut_dict['cut_height'] - cut_dict['cut_width']
-                    cof = 0
-                    if diff % 2 != 0:
-                        diff += 1
-                        cof = 1
-                    np_image = np.pad(
-                        np_image,
-                        ((10 + cof, 10), (int(diff // 2) + 10, int(diff // 2) + 10)),
-                        'constant', constant_values=(0, 0)
-                    )
-                    image = np_image
-                elif cut_dict['cut_width'] > cut_dict['cut_height']:
-                    diff = cut_dict['cut_width'] - cut_dict['cut_height']
-                    cof = 0
-                    if diff % 2 != 0:
-                        diff += 1
-                        cof = 1
-                    np_image = np.pad(
-                        np_image,
-                        ((int(diff // 2) + 10, int(diff // 2) + 10), (10 + cof, 10)),
-                        'constant', constant_values=(0, 0)
-                    )
-                    image = np_image
+        # TODO fix empty cut_dict['indexes']
+        if cut_dict['indexes']:
+            min_index = min(cut_dict['indexes'])
+            max_index = max(cut_dict['indexes'])
+            if min_index > 20 and max_index < cut_dict['height'] -20 and \
+                cut_dict['height'] > target[0] and cut_dict['width'] > target[1]:
+                np_image = np.array(image)
+                np_image = np_image[
+                    cut_dict['top_y']:cut_dict['bot_y'],
+                    cut_dict['left_x']:cut_dict['right_x']
+                ]
+                cut_dict['cut_width'] = len(np_image[0])
+                cut_dict['cut_height'] = len(np_image)
+                if cut_dict['cut_height'] != cut_dict['cut_width']:
+                    if cut_dict['cut_height'] > cut_dict['cut_width']:
+                        diff = cut_dict['cut_height'] - cut_dict['cut_width']
+                        cof = 0
+                        if diff % 2 != 0:
+                            diff += 1
+                            cof = 1
+                        np_image = np.pad(
+                            np_image,
+                            ((10 + cof, 10), (int(diff // 2) + 10, int(diff // 2) + 10)),
+                            'constant', constant_values=(0, 0)
+                        )
+                        image = np_image
+                    elif cut_dict['cut_width'] > cut_dict['cut_height']:
+                        diff = cut_dict['cut_width'] - cut_dict['cut_height']
+                        cof = 0
+                        if diff % 2 != 0:
+                            diff += 1
+                            cof = 1
+                        np_image = np.pad(
+                            np_image,
+                            ((int(diff // 2) + 10, int(diff // 2) + 10), (10 + cof, 10)),
+                            'constant', constant_values=(0, 0)
+                        )
+                        image = np_image
         
         image = imresize(image, target)
         return image
