@@ -216,21 +216,25 @@ def reload(command):
                     success=True,
                     data=res
                 )
+        global model_C 
         model_C = Zemodel(
             "./model/models_multi/model_Classifajar.h5",
             "./model/models_multi/labels_Classifajar.json",
             "classifajar"
         )
+        global model_u
         model_u = Zemodel(
             "./model/models_multi/model_uppercase.h5",
             "./model/models_multi/labels_uppercase.json",
             "uppercase"
         )
+        global model_l
         model_l = Zemodel(
             "./model/models_multi/model_lowercase.h5",
             "./model/models_multi/labels_lowercase.json",
             "lowercase"
         )
+        global model_n
         model_n = Zemodel(
             "./model/models_multi/model_numbers.h5",
             "./model/models_multi/labels_numbers.json",
@@ -251,6 +255,12 @@ def startT(button_id, checkboxes):
         t = threading.Thread(target=moira, args=(checkboxes and checkboxes or '', ))
         if len(threading.enumerate()) > 1:
             res.update({'value': 'STILL TRAINING!!!'})
+            return jsonify(
+                success=True,
+                data=res
+            )
+        elif not train.check_if_data():
+            res.update({'value': 'TRAIN DIR NOT FILLED UP!!!'})
             return jsonify(
                 success=True,
                 data=res

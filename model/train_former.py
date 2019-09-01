@@ -57,7 +57,7 @@ class Train_Former:
         Json_Self = file
         return Json_Self
 
-    def accountant(self):
+    def accountant(self, returned=False):
         """Counts files in save and train directories
         and creates info .json file TrFo_Self.json"""
         Json_Self = {}
@@ -78,6 +78,7 @@ class Train_Former:
                 Json_Self["Save_dir"][dir_name_abr]["Total_files"] = total
                 Json_Self["Save_dir"][dir_name_abr][i] = file_cnt
         for e in self.train_list:
+            print("DIRS: ", e)
             fct_list = []
             dir_cnt, dir_ls = Train_Former.count_dir(e)
             dir_name_abr = re.search(r"([^\/]+$)", str(e)).group(1)
@@ -93,6 +94,8 @@ class Train_Former:
                 Json_Self["Train_dir"][dir_name_abr][i] = file_cnt
         with open(self.json_dir + "TrFo_Self.json", 'w') as f:
             json.dump(Json_Self, f, indent=4, sort_keys=True)
+        if returned:
+            return Json_Self
     
     @staticmethod
     def sort_key(x):

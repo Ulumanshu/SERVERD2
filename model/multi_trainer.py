@@ -8,6 +8,7 @@ from keras.layers import Dropout
 from keras.layers import Flatten
 from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
+from keras.layers.normalization import BatchNormalization
 import json
 if __name__ == "__main__":
     from train_former import Train_Former as Former
@@ -25,7 +26,38 @@ class Multi_Trainer(Former):
     img_rows, img_cols = 42, 42
     input_shape = (img_rows, img_cols, 1)
     num_classes = None
-
+    
+    def __init__(
+        self,
+        save_dir="../static/Own_classes/save",
+        train_dir="../static/Own_classes/train",
+        json_dir="./",
+        uppercase="/uppercase",
+        lowercase="/lowercase",
+        numbers="/numbers",
+        classifajar="/Classifajar"
+    ):
+        super(Multi_Trainer, self).__init__(
+            save_dir,
+            train_dir,
+            json_dir,
+            uppercase,
+            lowercase,
+            numbers,
+            classifajar
+        )
+    
+    def check_if_data(self):
+        res = True
+        all_data = self.accountant(True)
+        train_data = all_data.get("Train_dir")
+        for key, value in train_data.items():
+            number = value.get('Min_fc', 0)
+            if number <= 0:
+                res = False
+                break
+        return res
+        
     def train_Classifajar(self):
         Multi_Trainer.source_dir = self.train_class
         Multi_Trainer.num_classes, dir_list = Former.count_dir(
@@ -109,35 +141,45 @@ class Multi_Trainer(Former):
             target_size=(42, 42),
             color_mode='grayscale',
             class_mode='categorical',
-            batch_size=8,
+            batch_size=20,
             subset="training")
         test = data.flow_from_directory(
             Multi_Trainer.source_dir,
             target_size=(42, 42),
             color_mode='grayscale',
             class_mode='categorical',
-            batch_size=2,
+            batch_size=4,
             subset="validation")
         return train, test
 
     def large_model(self, add_dense=0):
         model = Sequential()
-        model.add(
-            Conv2D(128, (3, 3), input_shape=Multi_Trainer.input_shape, activation='relu')
-        )
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Conv2D(64, (3, 3), activation='relu'))
-#        model.add(MaxPooling2D(pool_size=(2, 2)))
-#        model.add(Conv2D(128, (3, 3), activation='relu'))
-#        model.add(MaxPooling2D(pool_size=(2, 2)))
+        ################### KAGGLE ##################################
+        model.add(Conv2D(32,kernel_size=3,activation='relu',input_shape=Multi_Trainer.input_shape))
+        model.add(BatchNormalization())
+        model.add(Conv2D(32,kernel_size=3,activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Conv2D(32,kernel_size=5,strides=2,padding='same',activation='relu'))
+        model.add(BatchNormalization())
         model.add(Dropout(0.4))
+
+        model.add(Conv2D(64,kernel_size=3,activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Conv2D(64,kernel_size=3,activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Conv2D(64,kernel_size=5,strides=2,padding='same',activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Dropout(0.4))
+
         model.add(Flatten())
-        model.add(Dense(Multi_Trainer.num_classes * 10 + add_dense, activation='relu'))
-        model.add(Dropout(0.2))
+        model.add(Dense(128 + add_dense, activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Dropout(0.4))
         model.add(Dense(Multi_Trainer.num_classes, activation='softmax'))
-        # Compile model
         model.compile(loss='categorical_crossentropy', optimizer='adam',
                       metrics=['accuracy'])
+        #################################################################
+        
         return model
 
 if __name__ == "__main__":

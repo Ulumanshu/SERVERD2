@@ -1,0 +1,27 @@
+{
+    "Save_dir": {
+        "lowercase": {
+            "Dir_count": 0
+        },
+        "numbers": {
+            "Dir_count": 0
+        },
+        "uppercase": {
+            "Dir_count": 0
+        }
+    },
+    "Train_dir": {
+        "Classifajar": {
+            "Dir_count": 0
+        },
+        "lowercase": {
+            "Dir_count": 0
+        },
+        "numbers": {
+            "Dir_count": 0
+        },
+        "uppercase": {
+            "Dir_count": 0
+        }
+    }
+}
