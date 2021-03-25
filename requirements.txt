@@ -30,7 +30,7 @@ protobuf==3.7.1
 pyparsing==2.4.0
 python-dateutil==2.8.0
 python-mnist==0.5
-PyYAML==3.13
+PyYAML==5.4
 requests==2.19.1
 scipy==1.1.0
 six==1.11.0
